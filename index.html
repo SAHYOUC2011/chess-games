@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الشطرنج</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 100%;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-selector {
+            display: none;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-selector.show {
+            display: flex;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            border: 2px solid #667eea;
+        }
+
+        .game-board {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 2px;
+            background: #8B4513;
+            border: 4px solid #654321;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .square {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .square.light {
+            background: #F0D9B5;
+        }
+
+        .square.dark {
+            background: #B58863;
+        }
+
+        .square.selected {
+            background: #FFD700 !important;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+        }
+
+        .square.possible-move {
+            background: #90EE90 !important;
+        }
+
+        .square.under-attack {
+            background: #FFB6C1 !important;
+        }
+
+        .square:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .piece {
+            user-select: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .captured-pieces {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        .captured-white, .captured-black {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .captured-piece {
+            font-size: 1.5em;
+            opacity: 0.7;
+        }
+
+        .game-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .player-info {
+            padding: 15px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .player-info.active {
+            background: rgba(102, 126, 234, 0.2);
+            border: 2px solid #667eea;
+        }
+
+        .thinking {
+            display: none;
+            text-align: center;
+            font-style: italic;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .thinking.show {
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .game-container {
+                max-width: 90%;
+                padding: 25px;
+            }
+            
+            .square {
+                width: 55px;
+                height: 55px;
+                font-size: 2.2em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+                margin: 5px;
+                border-radius: 15px;
+            }
+            
+            .game-title {
+                font-size: 1.8em;
+                margin-bottom: 15px;
+            }
+            
+            .square {
+                width: 42px;
+                height: 42px;
+                font-size: 1.8em;
+            }
+            
+            .controls {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 8px 16px;
+                font-size: 13px;
+                min-width: 100px;
+            }
+            
+            .game-info {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .mode-selector, .difficulty-selector {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .status {
+                font-size: 1em;
+                padding: 10px;
+            }
+            
+            .captured-pieces {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .chessboard {
+                padding: 5px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .game-container {
+                padding: 10px;
+                margin: 0;
+                border-radius: 10px;
+            }
+            
+            .game-title {
+                font-size: 1.4em;
+                margin-bottom: 10px;
+            }
+            
+            .square {
+                width: 35px;
+                height: 35px;
+                font-size: 1.4em;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+                min-width: 80px;
+            }
+            
+            .controls {
+                gap: 5px;
+            }
+            
+            .mode-selector, .difficulty-selector {
+                gap: 5px;
+            }
+            
+            .status {
+                font-size: 0.9em;
+                padding: 8px;
+            }
+            
+            .player-info {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+            
+            .captured-pieces {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+            
+            .captured-piece {
+                font-size: 1.2em;
+            }
+            
+            .chessboard {
+                padding: 3px;
+                border-width: 2px;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .square {
+                width: 30px;
+                height: 30px;
+                font-size: 1.2em;
+            }
+            
+            .game-title {
+                font-size: 1.2em;
+            }
+            
+            .btn {
+                padding: 5px 10px;
+                font-size: 11px;
+                min-width: 70px;
+            }
+            
+            .status {
+                font-size: 0.8em;
+                padding: 6px;
+            }
+        }
+
+        /* Tablet Portrait */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+            .game-container {
+                max-width: 85%;
+                padding: 30px;
+            }
+            
+            .square {
+                width: 65px;
+                height: 65px;
+                font-size: 2.8em;
+            }
+            
+            .game-title {
+                font-size: 2.2em;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 15px;
+            }
+        }
+
+        /* Tablet Landscape */
+        @media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+            .game-container {
+                max-width: 80%;
+                padding: 35px;
+            }
+            
+            .square {
+                width: 70px;
+                height: 70px;
+                font-size: 3em;
+            }
+            
+            .game-info {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Touch-specific styles */
+        @media (hover: none) and (pointer: coarse) {
+            .square:hover {
+                transform: none;
+                box-shadow: none;
+            }
+            
+            .square:active {
+                transform: scale(0.95);
+                background-color: rgba(255, 215, 0, 0.3) !important;
+            }
+            
+            .btn:hover {
+                transform: none;
+                box-shadow: none;
+            }
+            
+            .btn:active {
+                transform: scale(0.95);
+                opacity: 0.8;
+            }
+        }
+
+        .drag-over {
+            background: rgba(255, 215, 0, 0.5) !important;
+            transform: scale(1.05);
+        }
+
+        .touch-device .square:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .rotated {
+            transition: transform 0.3s ease;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Vibration feedback styles */
+        .vibrate {
+            animation: vibrate 0.3s ease-in-out;
+        }
+
+        @keyframes vibrate {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        /* High DPI displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .piece {
+                text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">♔ لعبة الشطرنج ♛</h1>
+            
+            <div class="mode-selector">
+                <button class="btn" onclick="setGameMode('player')">لاعب ضد لاعب</button>
+                <button class="btn" onclick="setGameMode('computer')">ضد الكمبيوتر</button>
+            </div>
+            
+            <div class="difficulty-selector" id="difficultySelector">
+                <button class="btn" onclick="setDifficulty('easy')">سهل</button>
+                <button class="btn" onclick="setDifficulty('medium')">متوسط</button>
+                <button class="btn" onclick="setDifficulty('hard')">صعب</button>
+            </div>
+        </div>
+
+        <div class="status" id="gameStatus">اختر وضع اللعب</div>
+
+        <div class="game-info">
+            <div class="player-info" id="whitePlayer">
+                <h3>♔ الأبيض</h3>
+                <div>الدور الحالي</div>
+            </div>
+            <div class="player-info" id="blackPlayer">
+                <h3>♛ الأسود</h3>
+                <div>في الانتظار</div>
+            </div>
+        </div>
+
+        <div class="thinking" id="thinkingIndicator">الكمبيوتر يفكر...</div>
+
+        <div class="captured-pieces">
+            <div class="captured-white" id="capturedWhite">
+                <strong>قطع بيضاء أسرت:</strong>
+            </div>
+            <div class="captured-black" id="capturedBlack">
+                <strong>قطع سوداء أسرت:</strong>
+            </div>
+        </div>
+
+        <div class="game-board">
+            <div class="chessboard" id="chessboard"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="newGame()">لعبة جديدة</button>
+            <button class="btn" onclick="undoMove()">تراجع</button>
+            <button class="btn" onclick="getHint()">تلميح</button>
+        </div>
+    </div>
+
+    <script>
+        // Chess pieces Unicode
+        const pieces = {
+            'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
+            'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
+        };
+
+        // Game state
+        let gameMode = null;
+        let difficulty = 'medium';
+        let currentPlayer = 'white';
+        let selectedSquare = null;
+        let gameBoard = [];
+        let moveHistory = [];
+        let capturedPieces = { white: [], black: [] };
+        let gameOver = false;
+
+        // Initialize board
+        function initializeBoard() {
+            gameBoard = [
+                ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+                ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+                [null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, null],
+                ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+                ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+            ];
+        }
+
+        // Create board HTML
+        function createBoard() {
+            const board = document.getElementById('chessboard');
+            board.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    square.onclick = () => handleSquareClick(row, col);
+                    
+                    const piece = gameBoard[row][col];
+                    if (piece) {
+                        const pieceElement = document.createElement('div');
+                        pieceElement.className = 'piece';
+                        pieceElement.textContent = pieces[piece];
+                        square.appendChild(pieceElement);
+                    }
+                    
+                    board.appendChild(square);
+                }
+            }
+        }
+
+        // Handle square clicks
+        function handleSquareClick(row, col) {
+            if (gameOver) return;
+            if (gameMode === 'computer' && currentPlayer === 'black') return;
+
+            const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            const piece = gameBoard[row][col];
+
+            if (selectedSquare) {
+                const [selectedRow, selectedCol] = selectedSquare;
+                
+                if (row === selectedRow && col === selectedCol) {
+                    // Deselect
+                    clearSelection();
+                    return;
+                }
+
+                if (isValidMove(selectedRow, selectedCol, row, col)) {
+                    makeMove(selectedRow, selectedCol, row, col);
+                    clearSelection();
+                    
+                    if (gameMode === 'computer' && currentPlayer === 'black' && !gameOver) {
+                        setTimeout(makeComputerMove, 1000);
+                    }
+                } else {
+                    clearSelection();
+                    if (piece && isPlayerPiece(piece, currentPlayer)) {
+                        selectSquare(row, col);
+                    }
+                }
+            } else {
+                if (piece && isPlayerPiece(piece, currentPlayer)) {
+                    selectSquare(row, col);
+                }
+            }
+        }
+
+        function selectSquare(row, col) {
+            selectedSquare = [row, col];
+            const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            square.classList.add('selected');
+            showPossibleMoves(row, col);
+        }
+
+        function clearSelection() {
+            if (selectedSquare) {
+                const [row, col] = selectedSquare;
+                const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                square.classList.remove('selected');
+            }
+            selectedSquare = null;
+            clearHighlights();
+        }
+
+        function showPossibleMoves(row, col) {
+            const possibleMoves = getPossibleMoves(row, col);
+            possibleMoves.forEach(([moveRow, moveCol]) => {
+                const square = document.querySelector(`[data-row="${moveRow}"][data-col="${moveCol}"]`);
+                square.classList.add('possible-move');
+            });
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.square').forEach(square => {
+                square.classList.remove('possible-move', 'under-attack');
+            });
+        }
+
+        function isPlayerPiece(piece, player) {
+            return player === 'white' ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
+        }
+
+        // Move validation
+        function isValidMove(fromRow, fromCol, toRow, toCol) {
+            const piece = gameBoard[fromRow][fromCol];
+            const targetPiece = gameBoard[toRow][toCol];
+            
+            if (!piece) return false;
+            if (targetPiece && isPlayerPiece(piece, currentPlayer) && isPlayerPiece(targetPiece, currentPlayer)) {
+                return false;
+            }
+
+            const possibleMoves = getPossibleMoves(fromRow, fromCol);
+            return possibleMoves.some(([row, col]) => row === toRow && col === toCol);
+        }
+
+        function getPossibleMoves(row, col) {
+            const piece = gameBoard[row][col];
+            if (!piece) return [];
+
+            const moves = [];
+            const pieceType = piece.toLowerCase();
+
+            switch (pieceType) {
+                case 'p':
+                    moves.push(...getPawnMoves(row, col, piece));
+                    break;
+                case 'r':
+                    moves.push(...getRookMoves(row, col, piece));
+                    break;
+                case 'n':
+                    moves.push(...getKnightMoves(row, col, piece));
+                    break;
+                case 'b':
+                    moves.push(...getBishopMoves(row, col, piece));
+                    break;
+                case 'q':
+                    moves.push(...getQueenMoves(row, col, piece));
+                    break;
+                case 'k':
+                    moves.push(...getKingMoves(row, col, piece));
+                    break;
+            }
+
+            return moves.filter(([r, c]) => r >= 0 && r < 8 && c >= 0 && c < 8);
+        }
+
+        function getPawnMoves(row, col, piece) {
+            const moves = [];
+            const isWhite = piece === piece.toUpperCase();
+            const direction = isWhite ? -1 : 1;
+            const startRow = isWhite ? 6 : 1;
+
+            // Move forward
+            if (gameBoard[row + direction] && gameBoard[row + direction][col] === null) {
+                moves.push([row + direction, col]);
+                
+                // Two squares from start
+                if (row === startRow && gameBoard[row + 2 * direction][col] === null) {
+                    moves.push([row + 2 * direction, col]);
+                }
+            }
+
+            // Capture diagonally
+            if (col > 0 && gameBoard[row + direction] && gameBoard[row + direction][col - 1] && 
+                !isPlayerPiece(gameBoard[row + direction][col - 1], isWhite ? 'white' : 'black')) {
+                moves.push([row + direction, col - 1]);
+            }
+            if (col < 7 && gameBoard[row + direction] && gameBoard[row + direction][col + 1] && 
+                !isPlayerPiece(gameBoard[row + direction][col + 1], isWhite ? 'white' : 'black')) {
+                moves.push([row + direction, col + 1]);
+            }
+
+            return moves;
+        }
+
+        function getRookMoves(row, col, piece) {
+            const moves = [];
+            const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+            
+            directions.forEach(([dr, dc]) => {
+                for (let i = 1; i < 8; i++) {
+                    const newRow = row + dr * i;
+                    const newCol = col + dc * i;
+                    
+                    if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+                    
+                    const targetPiece = gameBoard[newRow][newCol];
+                    if (targetPiece === null) {
+                        moves.push([newRow, newCol]);
+                    } else {
+                        if (!isPlayerPiece(targetPiece, isPlayerPiece(piece, 'white') ? 'white' : 'black')) {
+                            moves.push([newRow, newCol]);
+                        }
+                        break;
+                    }
+                }
+            });
+
+            return moves;
+        }
+
+        function getKnightMoves(row, col, piece) {
+            const moves = [];
+            const knightMoves = [
+                [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                [1, -2], [1, 2], [2, -1], [2, 1]
+            ];
+
+            knightMoves.forEach(([dr, dc]) => {
+                const newRow = row + dr;
+                const newCol = col + dc;
+                
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                    const targetPiece = gameBoard[newRow][newCol];
+                    if (targetPiece === null || !isPlayerPiece(targetPiece, isPlayerPiece(piece, 'white') ? 'white' : 'black')) {
+                        moves.push([newRow, newCol]);
+                    }
+                }
+            });
+
+            return moves;
+        }
+
+        function getBishopMoves(row, col, piece) {
+            const moves = [];
+            const directions = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+            
+            directions.forEach(([dr, dc]) => {
+                for (let i = 1; i < 8; i++) {
+                    const newRow = row + dr * i;
+                    const newCol = col + dc * i;
+                    
+                    if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+                    
+                    const targetPiece = gameBoard[newRow][newCol];
+                    if (targetPiece === null) {
+                        moves.push([newRow, newCol]);
+                    } else {
+                        if (!isPlayerPiece(targetPiece, isPlayerPiece(piece, 'white') ? 'white' : 'black')) {
+                            moves.push([newRow, newCol]);
+                        }
+                        break;
+                    }
+                }
+            });
+
+            return moves;
+        }
+
+        function getQueenMoves(row, col, piece) {
+            return [...getRookMoves(row, col, piece), ...getBishopMoves(row, col, piece)];
+        }
+
+        function getKingMoves(row, col, piece) {
+            const moves = [];
+            const kingMoves = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1], [0, 1],
+                [1, -1], [1, 0], [1, 1]
+            ];
+
+            kingMoves.forEach(([dr, dc]) => {
+                const newRow = row + dr;
+                const newCol = col + dc;
+                
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                    const targetPiece = gameBoard[newRow][newCol];
+                    if (targetPiece === null || !isPlayerPiece(targetPiece, isPlayerPiece(piece, 'white') ? 'white' : 'black')) {
+                        moves.push([newRow, newCol]);
+                    }
+                }
+            });
+
+            return moves;
+        }
+
+        // Make a move
+        function makeMove(fromRow, fromCol, toRow, toCol) {
+            const piece = gameBoard[fromRow][fromCol];
+            const capturedPiece = gameBoard[toRow][toCol];
+            
+            // Save move to history
+            moveHistory.push({
+                from: [fromRow, fromCol],
+                to: [toRow, toCol],
+                piece: piece,
+                capturedPiece: capturedPiece,
+                player: currentPlayer
+            });
+
+            // Handle captured pieces
+            if (capturedPiece) {
+                const capturedColor = isPlayerPiece(capturedPiece, 'white') ? 'white' : 'black';
+                capturedPieces[capturedColor].push(capturedPiece);
+                updateCapturedPieces();
+            }
+
+            // Move piece
+            gameBoard[toRow][toCol] = piece;
+            gameBoard[fromRow][fromCol] = null;
+
+            // Check for pawn promotion
+            if (piece.toLowerCase() === 'p' && (toRow === 0 || toRow === 7)) {
+                gameBoard[toRow][toCol] = isPlayerPiece(piece, 'white') ? 'Q' : 'q';
+            }
+
+            // Update display
+            createBoard();
+            
+            // Check game status
+            if (isCheckmate(currentPlayer === 'white' ? 'black' : 'white')) {
+                gameOver = true;
+                updateGameStatus(`مات! ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'} يفوز!`);
+            } else if (isCheck(currentPlayer === 'white' ? 'black' : 'white')) {
+                updateGameStatus(`كش! دور ${currentPlayer === 'white' ? 'الأسود' : 'الأبيض'}`);
+            } else {
+                // Switch players
+                currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+                updateGameStatus(`دور ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`);
+            }
+            
+            updatePlayerInfo();
+        }
+
+        // Check functions
+        function isCheck(player) {
+            const kingPosition = findKing(player);
+            if (!kingPosition) return false;
+
+            const opponent = player === 'white' ? 'black' : 'white';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = gameBoard[row][col];
+                    if (piece && isPlayerPiece(piece, opponent)) {
+                        const moves = getPossibleMoves(row, col);
+                        if (moves.some(([r, c]) => r === kingPosition[0] && c === kingPosition[1])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function isCheckmate(player) {
+            if (!isCheck(player)) return false;
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = gameBoard[row][col];
+                    if (piece && isPlayerPiece(piece, player)) {
+                        const moves = getPossibleMoves(row, col);
+                        for (let [toRow, toCol] of moves) {
+                            // Try the move
+                            const originalPiece = gameBoard[toRow][toCol];
+                            gameBoard[toRow][toCol] = piece;
+                            gameBoard[row][col] = null;
+                            
+                            const stillInCheck = isCheck(player);
+                            
+                            // Undo the move
+                            gameBoard[row][col] = piece;
+                            gameBoard[toRow][toCol] = originalPiece;
+                            
+                            if (!stillInCheck) return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        function findKing(player) {
+            const kingPiece = player === 'white' ? 'K' : 'k';
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (gameBoard[row][col] === kingPiece) {
+                        return [row, col];
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Computer AI
+        function makeComputerMove() {
+            if (gameOver) return;
+            
+            showThinking(true);
+            
+            setTimeout(() => {
+                const move = getBestMove();
+                if (move) {
+                    makeMove(move.from[0], move.from[1], move.to[0], move.to[1]);
+                }
+                showThinking(false);
+            }, 1000);
+        }
+
+        function getBestMove() {
+            const moves = getAllPossibleMoves('black');
+            if (moves.length === 0) return null;
+
+            let bestMove = null;
+            let bestScore = -Infinity;
+
+            for (let move of moves) {
+                const score = evaluateMove(move);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+
+            return bestMove;
+        }
+
+        function getAllPossibleMoves(player) {
+            const moves = [];
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = gameBoard[row][col];
+                    if (piece && isPlayerPiece(piece, player)) {
+                        const possibleMoves = getPossibleMoves(row, col);
+                        possibleMoves.forEach(([toRow, toCol]) => {
+                            moves.push({
+                                from: [row, col],
+                                to: [toRow, toCol],
+                                piece: piece,
+                                capturedPiece: gameBoard[toRow][toCol]
+                            });
+                        });
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function evaluateMove(move) {
+            const pieceValues = {
+                'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 1000,
+                'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 1000
+            };
+
+            let score = 0;
+            
+            // Basic piece value
+            if (move.capturedPiece) {
+                score += pieceValues[move.capturedPiece] * 10;
+            }
+
+            // Position bonuses
+            const [toRow, toCol] = move.to;
+            if (toRow >= 2 && toRow <= 5 && toCol >= 2 && toCol <= 5) {
+                score += 2; // Center control
+            }
+
+            // Difficulty adjustment
+            if (difficulty === 'easy') {
+                score += Math.random() * 20 - 10;
+            } else if (difficulty === 'medium') {
+                score += Math.random() * 10 - 5;
+            }
+
+            return score;
+        }
+
+        // Game controls
+        function setGameMode(mode) {
+            gameMode = mode;
+            if (mode === 'computer') {
+                document.getElementById('difficultySelector').classList.add('show');
+                updateGameStatus('اختر مستوى الصعوبة ثم ابدأ لعبة جديدة');
+            } else {
+                document.getElementById('difficultySelector').classList.remove('show');
+                updateGameStatus('وضع لاعب ضد لاعب - ابدأ لعبة جديدة');
+            }
+        }
+
+        function setDifficulty(level) {
+            difficulty = level;
+            const levels = {
+                'easy': 'سهل',
+                'medium': 'متوسط', 
+                'hard': 'صعب'
+            };
+            updateGameStatus(`تم اختيار المستوى: ${levels[level]} - ابدأ لعبة جديدة`);
+        }
+
+        function newGame() {
+            if (!gameMode) {
+                updateGameStatus('اختر وضع اللعب أولاً');
+                return;
+            }
+
+            initializeBoard();
+            createBoard();
+            currentPlayer = 'white';
+            selectedSquare = null;
+            moveHistory = [];
+            capturedPieces = { white: [], black: [] };
+            gameOver = false;
+            
+            updateGameStatus(`لعبة جديدة بدأت - دور ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`);
+            updatePlayerInfo();
+            updateCapturedPieces();
+            clearHighlights();
+        }
+
+        function undoMove() {
+            if (moveHistory.length === 0 || gameOver) return;
+            
+            const lastMove = moveHistory.pop();
+            const { from, to, piece, capturedPiece, player } = lastMove;
+            
+            // Restore piece positions
+            gameBoard[from[0]][from[1]] = piece;
+            gameBoard[to[0]][to[1]] = capturedPiece;
+            
+            // Restore captured pieces
+            if (capturedPiece) {
+                const capturedColor = isPlayerPiece(capturedPiece, 'white') ? 'white' : 'black';
+                capturedPieces[capturedColor].pop();
+                updateCapturedPieces();
+            }
+            
+            // Restore player turn
+            currentPlayer = player;
+            
+            // If computer mode, undo computer move too
+            if (gameMode === 'computer' && moveHistory.length > 0 && moveHistory[moveHistory.length - 1].player === 'black') {
+                const computerMove = moveHistory.pop();
+                gameBoard[computerMove.from[0]][computerMove.from[1]] = computerMove.piece;
+                gameBoard[computerMove.to[0]][computerMove.to[1]] = computerMove.capturedPiece;
+                
+                if (computerMove.capturedPiece) {
+                    const capturedColor = isPlayerPiece(computerMove.capturedPiece, 'white') ? 'white' : 'black';
+                    capturedPieces[capturedColor].pop();
+                    updateCapturedPieces();
+                }
+            }
+            
+            createBoard();
+            updateGameStatus(`دور ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`);
+            updatePlayerInfo();
+            clearSelection();
+        }
+
+        function getHint() {
+            if (gameOver || !gameMode) return;
+            
+            const moves = getAllPossibleMoves(currentPlayer);
+            if (moves.length === 0) return;
+            
+            // Get a good move suggestion
+            let bestMove = null;
+            let bestScore = -Infinity;
+            
+            for (let move of moves) {
+                const score = evaluateMove(move);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+            
+            if (bestMove) {
+                // Highlight the suggested move
+                const fromSquare = document.querySelector(`[data-row="${bestMove.from[0]}"][data-col="${bestMove.from[1]}"]`);
+                const toSquare = document.querySelector(`[data-row="${bestMove.to[0]}"][data-col="${bestMove.to[1]}"]`);
+                
+                fromSquare.classList.add('under-attack');
+                toSquare.classList.add('under-attack');
+                
+                setTimeout(() => {
+                    fromSquare.classList.remove('under-attack');
+                    toSquare.classList.remove('under-attack');
+                }, 2000);
+                
+                updateGameStatus(`تلميح: حرك القطعة من ${String.fromCharCode(97 + bestMove.from[1])}${8 - bestMove.from[0]} إلى ${String.fromCharCode(97 + bestMove.to[1])}${8 - bestMove.to[0]}`);
+            }
+        }
+
+        function updateGameStatus(message) {
+            document.getElementById('gameStatus').textContent = message;
+        }
+
+        function updatePlayerInfo() {
+            const whitePlayer = document.getElementById('whitePlayer');
+            const blackPlayer = document.getElementById('blackPlayer');
+            
+            whitePlayer.classList.remove('active');
+            blackPlayer.classList.remove('active');
+            
+            if (currentPlayer === 'white') {
+                whitePlayer.classList.add('active');
+                whitePlayer.innerHTML = '<h3>♔ الأبيض</h3><div>الدور الحالي</div>';
+                blackPlayer.innerHTML = '<h3>♛ الأسود</h3><div>في الانتظار</div>';
+            } else {
+                blackPlayer.classList.add('active');
+                blackPlayer.innerHTML = '<h3>♛ الأسود</h3><div>الدور الحالي</div>';
+                whitePlayer.innerHTML = '<h3>♔ الأبيض</h3><div>في الانتظار</div>';
+            }
+        }
+
+        function updateCapturedPieces() {
+            const capturedWhiteDiv = document.getElementById('capturedWhite');
+            const capturedBlackDiv = document.getElementById('capturedBlack');
+            
+            capturedWhiteDiv.innerHTML = '<strong>قطع بيضاء أسرت:</strong>';
+            capturedPieces.white.forEach(piece => {
+                const span = document.createElement('span');
+                span.className = 'captured-piece';
+                span.textContent = pieces[piece];
+                capturedWhiteDiv.appendChild(span);
+            });
+            
+            capturedBlackDiv.innerHTML = '<strong>قطع سوداء أسرت:</strong>';
+            capturedPieces.black.forEach(piece => {
+                const span = document.createElement('span');
+                span.className = 'captured-piece';
+                span.textContent = pieces[piece];
+                capturedBlackDiv.appendChild(span);
+            });
+        }
+
+        function showThinking(show) {
+            const indicator = document.getElementById('thinkingIndicator');
+            if (show) {
+                indicator.classList.add('show');
+            } else {
+                indicator.classList.remove('show');
+            }
+        }
+
+        // Enhanced AI for different difficulty levels
+        function evaluatePosition(player) {
+            const pieceValues = {
+                'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 1000,
+                'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 1000
+            };
+
+            let score = 0;
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = gameBoard[row][col];
+                    if (piece) {
+                        const value = pieceValues[piece];
+                        if (isPlayerPiece(piece, 'black')) {
+                            score += value;
+                        } else {
+                            score -= value;
+                        }
+                    }
+                }
+            }
+            
+            return score;
+        }
+
+        function minimax(depth, maximizingPlayer, alpha, beta) {
+            if (depth === 0 || gameOver) {
+                return evaluatePosition('black');
+            }
+            
+            const moves = getAllPossibleMoves(maximizingPlayer ? 'black' : 'white');
+            
+            if (maximizingPlayer) {
+                let maxEval = -Infinity;
+                for (let move of moves) {
+                    // Make move
+                    const originalPiece = gameBoard[move.to[0]][move.to[1]];
+                    gameBoard[move.to[0]][move.to[1]] = move.piece;
+                    gameBoard[move.from[0]][move.from[1]] = null;
+                    
+                    const eval = minimax(depth - 1, false, alpha, beta);
+                    
+                    // Undo move
+                    gameBoard[move.from[0]][move.from[1]] = move.piece;
+                    gameBoard[move.to[0]][move.to[1]] = originalPiece;
+                    
+                    maxEval = Math.max(maxEval, eval);
+                    alpha = Math.max(alpha, eval);
+                    
+                    if (beta <= alpha) break;
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                for (let move of moves) {
+                    // Make move
+                    const originalPiece = gameBoard[move.to[0]][move.to[1]];
+                    gameBoard[move.to[0]][move.to[1]] = move.piece;
+                    gameBoard[move.from[0]][move.from[1]] = null;
+                    
+                    const eval = minimax(depth - 1, true, alpha, beta);
+                    
+                    // Undo move
+                    gameBoard[move.from[0]][move.from[1]] = move.piece;
+                    gameBoard[move.to[0]][move.to[1]] = originalPiece;
+                    
+                    minEval = Math.min(minEval, eval);
+                    beta = Math.min(beta, eval);
+                    
+                    if (beta <= alpha) break;
+                }
+                return minEval;
+            }
+        }
+
+        function getBestMoveAdvanced() {
+            const moves = getAllPossibleMoves('black');
+            if (moves.length === 0) return null;
+
+            let bestMove = null;
+            let bestScore = -Infinity;
+            
+            const searchDepth = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 2 : 3;
+            
+            for (let move of moves) {
+                // Make move
+                const originalPiece = gameBoard[move.to[0]][move.to[1]];
+                gameBoard[move.to[0]][move.to[1]] = move.piece;
+                gameBoard[move.from[0]][move.from[1]] = null;
+                
+                const score = minimax(searchDepth - 1, false, -Infinity, Infinity);
+                
+                // Undo move
+                gameBoard[move.from[0]][move.from[1]] = move.piece;
+                gameBoard[move.to[0]][move.to[1]] = originalPiece;
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+            
+            // Add some randomness for easier difficulties
+            if (difficulty === 'easy' && Math.random() < 0.3) {
+                bestMove = moves[Math.floor(Math.random() * moves.length)];
+            }
+            
+            return bestMove;
+        }
+
+        // Override getBestMove for advanced AI
+        function getBestMove() {
+            if (difficulty === 'hard') {
+                return getBestMoveAdvanced();
+            } else {
+                const moves = getAllPossibleMoves('black');
+                if (moves.length === 0) return null;
+
+                let bestMove = null;
+                let bestScore = -Infinity;
+
+                for (let move of moves) {
+                    const score = evaluateMove(move);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = move;
+                    }
+                }
+
+                return bestMove;
+            }
+        }
+
+        // Initialize game
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeBoard();
+            createBoard();
+            updateGameStatus('اختر وضع اللعب لبدء اللعبة');
+            updatePlayerInfo();
+            updateCapturedPieces();
+            
+            // Mobile optimizations
+            optimizeForMobile();
+            adjustBoardSize();
+            
+            // Add touch device class
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
+            }
+            
+            // Prevent context menu on long press
+            document.addEventListener('contextmenu', function(e) {
+                if (e.target.closest('.square')) {
+                    e.preventDefault();
+                }
+            });
+            
+            // Add swipe gestures for mobile
+            addSwipeGestures();
+        });
+
+        // Swipe gestures for mobile navigation
+        function addSwipeGestures() {
+            let startX, startY, startTime;
+            
+            document.addEventListener('touchstart', function(e) {
+                if (e.target.closest('.game-container')) {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    startTime = Date.now();
+                }
+            });
+            
+            document.addEventListener('touchend', function(e) {
+                if (!startX || !startY) return;
+                
+                const endX = e.changedTouches[0].clientX;
+                const endY = e.changedTouches[0].clientY;
+                const deltaX = endX - startX;
+                const deltaY = endY - startY;
+                const deltaTime = Date.now() - startTime;
+                
+                if (deltaTime < 300 && Math.abs(deltaX) > 100 && Math.abs(deltaY) < 50) {
+                    if (deltaX > 0) {
+                        // Swipe right - undo move
+                        undoMove();
+                    } else {
+                        // Swipe left - hint
+                        getHint();
+                    }
+                }
+                
+                startX = startY = null;
+            });
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                clearSelection();
+            } else if (e.key === 'h' || e.key === 'H') {
+                getHint();
+            } else if (e.key === 'u' || e.key === 'U') {
+                undoMove();
+            } else if (e.key === 'n' || e.key === 'N') {
+                newGame();
+            } else if (e.key === 'r' || e.key === 'R') {
+                // Rotate board for mobile
+                if (window.innerWidth <= 768) {
+                    rotateBoard();
+                }
+            }
+        });
+
+        // Board rotation for mobile
+        function rotateBoard() {
+            const board = document.querySelector('.chessboard');
+            const isRotated = board.classList.contains('rotated');
+            
+            if (isRotated) {
+                board.classList.remove('rotated');
+                board.style.transform = 'rotate(0deg)';
+            } else {
+                board.classList.add('rotated');
+                board.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        // Battery optimization for mobile
+        function optimizeBattery() {
+            if (navigator.getBattery) {
+                navigator.getBattery().then(function(battery) {
+                    if (battery.level < 0.2) {
+                        // Reduce animations when battery is low
+                        document.querySelectorAll('.square').forEach(square => {
+                            square.style.transition = 'none';
+                        });
+                    }
+                });
+            }
+        }
+
+        // Network status awareness
+        function handleNetworkStatus() {
+            window.addEventListener('online', function() {
+                updateGameStatus('اتصال الإنترنت متاح');
+            });
+            
+            window.addEventListener('offline', function() {
+                updateGameStatus('وضع عدم الاتصال - اللعبة تعمل محلياً');
+            });
+        }
+
+        // Performance monitoring
+        function monitorPerformance() {
+            let frameCount = 0;
+            let lastTime = performance.now();
+            
+            function checkFPS() {
+                const now = performance.now();
+                frameCount++;
+                
+                if (now - lastTime >= 1000) {
+                    const fps = frameCount * 1000 / (now - lastTime);
+                    
+                    if (fps < 30 && window.innerWidth <= 768) {
+                        // Reduce visual effects on low-end devices
+                        document.querySelectorAll('.square').forEach(square => {
+                            square.style.transition = 'background-color 0.1s ease';
+                        });
+                    }
+                    
+                    frameCount = 0;
+                    lastTime = now;
+                }
+                
+                requestAnimationFrame(checkFPS);
+            }
+            
+            requestAnimationFrame(checkFPS);
+        }
+
+        // Initialize additional features
+        setTimeout(function() {
+            optimizeBattery();
+            handleNetworkStatus();
+            monitorPerformance();
+        }, 1000);
+
+        // Touch support for mobile
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let isDragging = false;
+        let touchTarget = null;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
+            isDragging = false;
+            touchTarget = e.target.closest('.square');
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function(e) {
+            if (!touchTarget) return;
+            
+            const touchX = e.touches[0].clientX;
+            const touchY = e.touches[0].clientY;
+            const deltaX = Math.abs(touchX - touchStartX);
+            const deltaY = Math.abs(touchY - touchStartY);
+            
+            if (deltaX > 10 || deltaY > 10) {
+                isDragging = true;
+                
+                // Visual feedback during drag
+                const draggedPiece = touchTarget.querySelector('.piece');
+                if (draggedPiece) {
+                    draggedPiece.style.transform = 'scale(1.2)';
+                    draggedPiece.style.zIndex = '1000';
+                }
+                
+                // Highlight possible drop targets
+                const targetElement = document.elementFromPoint(touchX, touchY);
+                const targetSquare = targetElement ? targetElement.closest('.square') : null;
+                
+                document.querySelectorAll('.square').forEach(sq => {
+                    sq.classList.remove('drag-over');
+                });
+                
+                if (targetSquare && targetSquare !== touchTarget) {
+                    targetSquare.classList.add('drag-over');
+                }
+            }
+            
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('touchend', function(e) {
+            if (!touchTarget) return;
+            
+            const touchTime = Date.now() - touchStartTime;
+            const touchX = e.changedTouches[0].clientX;
+            const touchY = e.changedTouches[0].clientY;
+            
+            // Reset visual feedback
+            const draggedPiece = touchTarget.querySelector('.piece');
+            if (draggedPiece) {
+                draggedPiece.style.transform = '';
+                draggedPiece.style.zIndex = '';
+            }
+            
+            document.querySelectorAll('.square').forEach(sq => {
+                sq.classList.remove('drag-over');
+            });
+            
+            if (isDragging) {
+                // Handle drag and drop
+                const targetElement = document.elementFromPoint(touchX, touchY);
+                const targetSquare = targetElement ? targetElement.closest('.square') : null;
+                
+                if (targetSquare && targetSquare !== touchTarget) {
+                    const fromRow = parseInt(touchTarget.dataset.row);
+                    const fromCol = parseInt(touchTarget.dataset.col);
+                    const toRow = parseInt(targetSquare.dataset.row);
+                    const toCol = parseInt(targetSquare.dataset.col);
+                    
+                    if (selectedSquare && selectedSquare[0] === fromRow && selectedSquare[1] === fromCol) {
+                        handleSquareClick(toRow, toCol);
+                    } else {
+                        handleSquareClick(fromRow, fromCol);
+                        setTimeout(() => handleSquareClick(toRow, toCol), 100);
+                    }
+                }
+            } else if (touchTime < 300) {
+                // Handle tap
+                const row = parseInt(touchTarget.dataset.row);
+                const col = parseInt(touchTarget.dataset.col);
+                handleSquareClick(row, col);
+            }
+            
+            touchTarget = null;
+            isDragging = false;
+        });
+
+        // Double tap for hints on mobile
+        let lastTapTime = 0;
+        document.addEventListener('touchstart', function(e) {
+            const currentTime = Date.now();
+            if (currentTime - lastTapTime < 300) {
+                getHint();
+                e.preventDefault();
+            }
+            lastTapTime = currentTime;
+        });
+
+        // Auto-resize for different screen sizes
+        function adjustBoardSize() {
+            const container = document.querySelector('.game-container');
+            const board = document.querySelector('.chessboard');
+            const squares = document.querySelectorAll('.square');
+            
+            if (!container || !board || squares.length === 0) return;
+            
+            const containerWidth = container.offsetWidth;
+            const containerHeight = window.innerHeight;
+            const isPortrait = containerHeight > containerWidth;
+            
+            // Calculate optimal board size
+            let maxBoardSize;
+            if (window.innerWidth <= 480) {
+                maxBoardSize = Math.min(containerWidth - 20, containerHeight * 0.4);
+            } else if (window.innerWidth <= 768) {
+                maxBoardSize = Math.min(containerWidth - 30, containerHeight * 0.5);
+            } else {
+                maxBoardSize = Math.min(containerWidth - 40, 600);
+            }
+            
+            const squareSize = Math.floor(maxBoardSize / 8) - 3;
+            const fontSize = Math.max(Math.floor(squareSize * 0.6), 12);
+            
+            squares.forEach(square => {
+                square.style.width = squareSize + 'px';
+                square.style.height = squareSize + 'px';
+                square.style.fontSize = fontSize + 'px';
+            });
+            
+            // Adjust board padding
+            const padding = Math.max(Math.floor(squareSize * 0.1), 3);
+            board.style.padding = padding + 'px';
+        }
+
+        // Orientation change handler
+        function handleOrientationChange() {
+            setTimeout(() => {
+                adjustBoardSize();
+                // Force redraw on iOS
+                const body = document.body;
+                body.style.display = 'none';
+                body.offsetHeight;
+                body.style.display = 'flex';
+            }, 100);
+        }
+
+        // Viewport meta tag adjustment for mobile
+        function adjustViewport() {
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                if (window.innerWidth <= 480) {
+                    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                } else {
+                    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes';
+                }
+            }
+        }
+
+        // Prevent zoom on double tap (iOS Safari)
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTapTime <= 300) {
+                e.preventDefault();
+            }
+        });
+
+        // Initialize responsive features
+        window.addEventListener('resize', adjustBoardSize);
+        window.addEventListener('orientationchange', handleOrientationChange);
+        window.addEventListener('load', function() {
+            adjustBoardSize();
+            adjustViewport();
+        });
+
+        // Performance optimization for mobile
+        function optimizeForMobile() {
+            if (window.innerWidth <= 768) {
+                // Reduce animation complexity on mobile
+                document.querySelectorAll('.square').forEach(square => {
+                    square.style.transition = 'background-color 0.2s ease';
+                });
+                
+                // Optimize hover effects for touch devices
+                if ('ontouchstart' in window) {
+                    document.body.classList.add('touch-device');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
